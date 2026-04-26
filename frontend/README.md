@@ -1,195 +1,70 @@
-# Frontend Setup Guide
+# Getting Started with Create React App
 
-## Detailed Frontend Instructions
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-### Installation
+## Available Scripts
 
-1. **Navigate to frontend folder:**
-   ```bash
-   cd frontend
-   ```
+In the project directory, you can run:
 
-2. **Install all dependencies:**
-   ```bash
-   npm install
-   ```
+### `npm start`
 
-### Configuration
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-Create a `.env` file in the frontend directory (optional):
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
 
-```env
-# API Configuration
-REACT_APP_API_URL=http://localhost:5000/api
-```
+### `npm test`
 
-If not specified, it defaults to `http://localhost:5000/api`
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### Project Structure Explained
+### `npm run build`
 
-**Components** - Reusable UI components
-- `Navbar.js` - Navigation bar with links and user menu
-- `DoctorCard.js` - Individual doctor card component
-- `MedicineCard.js` - Individual medicine card component
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-**Pages** - Full page components
-- `Home.js` - Landing page with services overview
-- `Services.js` - Detailed services information
-- `Login.js` - User login form
-- `Signup.js` - User registration form
-- `Dashboard.js` - User overview after login
-- `Profile.js` - User profile and appointment history
-- `DoctorList.js` - Browse and filter doctors
-- `AppointmentForm.js` - Book appointments
-- `Pharmacy.js` - Browse medicines
-- `Cart.js` - Shopping cart management
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-**Services** - API integration
-- `api.js` - Axios instance with JWT token handling
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### Running the Frontend
+### `npm run eject`
 
-**Development mode:**
-```bash
-npm start
-```
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-The app will open at: `http://localhost:3000`
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-**Build for production:**
-```bash
-npm run build
-```
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-**Run tests:**
-```bash
-npm test
-```
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Features Walkthrough
+## Learn More
 
-### 1. Home Page
-- Hero section with CTA buttons
-- Services overview
-- Quick action buttons
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-### 2. Authentication
-- Sign up with email and password
-- Login with credentials
-- Password validation
-- Auto-redirect after login
+To learn React, check out the [React documentation](https://reactjs.org/).
 
-### 3. Doctor List
-- Browse all doctors
-- Filter by specialization
-- View doctor details and ratings
-- Book appointments with one click
+### Code Splitting
 
-### 4. Dashboard
-- Quick stats (upcoming appointments, past appointments, prescriptions)
-- Health tips
-- Quick action buttons to main features
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### 5. Appointments
-- Select doctor from dropdown
-- Choose date (future dates only)
-- Select time
-- Provide reason for visit
-- Confirmation message
+### Analyzing the Bundle Size
 
-### 6. Pharmacy
-- Search medicines by name
-- Filter by category
-- Add to cart with quantity
-- View medicine details
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### 7. Shopping Cart
-- View all cart items
-- Modify quantities
-- Remove items
-- See order summary with total
-- Delivery fee calculation
+### Making a Progressive Web App
 
-### 8. Profile
-- View personal information
-- See appointment history
-- Cancel pending appointments
-- Track appointment status
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-## Local Storage Usage
+### Advanced Configuration
 
-The app uses localStorage for:
-- JWT token (key: `token`)
-- User data (key: `user`)
-- Shopping cart (key: `cart`)
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-## Styling Guide
+### Deployment
 
-All components use custom CSS with:
-- Consistent color scheme (primary: #0066cc, secondary: #00a3e0)
-- Responsive grid layouts
-- Mobile-first design
-- Modern hover effects
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-## Common Issues & Solutions
+### `npm run build` fails to minify
 
-### Port 3000 Already in Use
-```bash
-PORT=3001 npm start
-```
-
-### Cannot Connect to Backend
-- Ensure backend is running on port 5000
-- Check `REACT_APP_API_URL` in .env
-- Verify network connectivity
-
-### Styles Not Loading
-- Clear browser cache (Ctrl+Shift+Delete)
-- Restart React dev server
-- Check CSS file imports
-
-### Auth Token Issues
-- Clear localStorage manually
-- Re-login to get new token
-- Check JWT expiration time
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-
-## Performance Optimization
-
-✅ Component-based architecture for reusability
-✅ Lazy loading with React Router
-✅ localStorage for cart persistence
-✅ Axios interceptors for efficient API calls
-✅ CSS optimization with shared variables
-
-## Development Tips
-
-### Debugging
-```javascript
-// Check localStorage
-console.log(localStorage.getItem('token'));
-
-// API calls
-// Check network tab in browser DevTools
-```
-
-### Adding New Features
-1. Create new component in appropriate folder
-2. Add routing in App.js
-3. Create associated CSS file
-4. Import and use the component
-
-### State Management
-- Uses React hooks (useState, useEffect)
-- localStorage for persistence
-- Props drilling for component communication
-
----
-
-**Frontend is now ready with all pages, components, and styling!**
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
