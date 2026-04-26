@@ -1,0 +1,81 @@
+/* DoctorCard Styles */
+.doctor-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.doctor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.doctor-card-header {
+  background: linear-gradient(135deg, #0066cc 0%, #00a3e0 100%);
+  padding: 30px;
+  text-align: center;
+}
+
+.doctor-avatar {
+  font-size: 50px;
+}
+
+.doctor-card-body {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.doctor-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.doctor-specialization {
+  color: #0066cc;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.doctor-info {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+  flex-grow: 1;
+}
+
+.doctor-info p {
+  margin-bottom: 8px;
+}
+
+.doctor-availability {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 5px;
+}
+
+.doctor-book-btn {
+  background-color: #28a745;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.doctor-book-btn:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+}

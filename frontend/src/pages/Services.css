@@ -1,0 +1,145 @@
+/* Services Page Styles */
+.services-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.services-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.services-header h1 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.services-header p {
+  font-size: 16px;
+  color: #666;
+}
+
+.services-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  margin-bottom: 60px;
+}
+
+.service-card {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.service-card-icon {
+  font-size: 45px;
+  margin-bottom: 15px;
+}
+
+.service-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.service-description {
+  color: #666;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.service-features {
+  background-color: #f5f7fa;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.service-features h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.service-features ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.service-features li {
+  font-size: 13px;
+  color: #666;
+  padding: 5px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.service-features li:before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #28a745;
+  font-weight: bold;
+}
+
+/* CTA Section */
+.services-cta {
+  background: linear-gradient(135deg, #0066cc 0%, #00a3e0 100%);
+  color: white;
+  padding: 50px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.services-cta h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.services-cta p {
+  font-size: 16px;
+  margin-bottom: 25px;
+  opacity: 0.95;
+}
+
+.cta-button {
+  background-color: white;
+  color: #0066cc;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .services-header h1 {
+    font-size: 24px;
+  }
+
+  .services-container {
+    grid-template-columns: 1fr;
+  }
+
+  .services-cta {
+    padding: 30px 20px;
+  }
+}
