@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { authAPI } from "../services/api";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -90,17 +91,10 @@ function injectCSS(id, css) {
   document.head.appendChild(s);
 }
 
-// ── Demo credentials (replace with real API call) ──────────────────────────
-const DEMO_USERS = [
-  { email: "patient@demo.com",  password: "demo123", name: "Ravi Kumar",   role: "patient" },
-  { email: "doctor@demo.com",   password: "demo123", name: "Dr. Priya Reddy", role: "doctor" },
-  { email: "admin@demo.com",    password: "demo123", name: "Admin User",   role: "admin"   },
-];
-
 export default function Login() {
   injectCSS("login-css", CSS);
   const navigate = useNavigate();
-  const [role, setRole] = useState("patient");
+  const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -109,20 +103,23 @@ export default function Login() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
-    await new Promise(r => setTimeout(r, 600)); // simulate API
+    setError("");
+    setLoading(true);
 
-    // ── Replace this block with your real API call ──
-    const match = DEMO_USERS.find(u => u.email === form.email && u.password === form.password && u.role === role);
-    if (!match) {
-      setError("Invalid email or password. Try demo credentials below.");
-      setLoading(false); return;
+    try {
+      const response = await authAPI.login(form.email, form.password);
+      
+      if (response.success) {
+        // Token and user are automatically saved in localStorage by authAPI
+        navigate(location.state?.returnTo || "/dashboard", { replace: true });
+      } else {
+        setError(response.message || "Login failed. Please check your credentials.");
+      }
+    } catch (err) {
+      setError(err.message || "An error occurred during login.");
+    } finally {
+      setLoading(false);
     }
-    localStorage.setItem("user",  JSON.stringify({ name: match.name, email: match.email, role: match.role }));
-    localStorage.setItem("token", "demo-token-" + Date.now());
-    // ── End replace block ──
-
-    navigate(role === "doctor" ? "/doctor/dashboard" : role === "admin" ? "/admin" : "/dashboard");
   };
 
   return (
@@ -131,14 +128,6 @@ export default function Login() {
         <div className="auth-logo"><Link to="/">🏥 <span>Medi</span>Care Plus</Link></div>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-sub">Sign in to your account to continue</p>
-
-        <div className="role-tabs">
-          {["patient","doctor","admin"].map(r => (
-            <button key={r} className={`role-tab${role===r?" active":""}`} onClick={() => setRole(r)}>
-              {r==="patient"?"🧑 Patient": r==="doctor"?"🩺 Doctor":"⚙️ Admin"}
-            </button>
-          ))}
-        </div>
 
         {error && <div className="alert-error">⚠️ {error}</div>}
 
@@ -162,12 +151,7 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="auth-divider"><span>Demo credentials</span></div>
-        <p style={{fontSize:12,color:"#5f6f87",textAlign:"center",lineHeight:1.7}}>
-          Patient: patient@demo.com / demo123<br/>
-          Doctor: doctor@demo.com / demo123<br/>
-          Admin: admin@demo.com / demo123
-        </p>
+
 
         <div className="auth-footer">
           Don't have an account? <Link to="/signup">Create one</Link>

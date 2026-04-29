@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
+import { doctorAPI, appointmentAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -75,47 +77,111 @@ const CSS = `
   @keyframes pop { from { transform: scale(0.5); opacity:0; } to { transform: scale(1); opacity:1; } }
   .success-state h2 { font-family: 'DM Serif Display', serif; font-size: 26px; color: #102033; margin-bottom: 8px; }
   .success-state p { color: #5f6f87; font-size: 14px; margin-bottom: 24px; }
+  
+  .alert-error { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.20); border-radius: 10px; padding: 11px 14px; font-size: 13px; color: #b42318; margin-bottom: 18px; }
 `;
-function injectCSS(id, css) { if (document.getElementById(id)) return; const s = document.createElement("style"); s.id = id; s.textContent = css; document.head.appendChild(s); }
+function injectCSS(id, css) {
+  if (document.getElementById(id)) return;
+  const s = document.createElement("style");
+  s.id = id;
+  s.textContent = css;
+  document.head.appendChild(s);
+}
 
 const DEPTS = [
-  { icon:"🩺", name:"General"     }, { icon:"🫀", name:"Cardiology"  },
-  { icon:"🧠", name:"Neurology"   }, { icon:"🦷", name:"Dental"      },
-  { icon:"👶", name:"Pediatrics"  }, { icon:"🦴", name:"Orthopedics" },
-  { icon:"👁️", name:"Eye Care"    }, { icon:"🔬", name:"Pathology"   },
+  { icon: "🩺", name: "General" },
+  { icon: "🫀", name: "Cardiology" },
+  { icon: "🧠", name: "Neurology" },
+  { icon: "🦷", name: "Dental" },
+  { icon: "👶", name: "Pediatrics" },
+  { icon: "🦴", name: "Orthopedics" },
+  { icon: "👁️", name: "Eye Care" },
+  { icon: "🔬", name: "Pathology" },
 ];
-const DOCTORS = {
-  Cardiology:  [{ name:"Dr. Priya Reddy",  exp:"8 yrs", rating:"4.9", color:"#059669", init:"PR" }, { name:"Dr. Arun Das",   exp:"12 yrs", rating:"4.7", color:"#0d9488", init:"AD" }],
-  Neurology:   [{ name:"Dr. Arjun Mehta",  exp:"10 yrs", rating:"4.8", color:"#7c3aed", init:"AM" }],
-  General:     [{ name:"Dr. Vikram Nair",  exp:"6 yrs",  rating:"4.6", color:"#64748b", init:"VN" }],
-  Orthopedics: [{ name:"Dr. Sneha Sharma", exp:"9 yrs",  rating:"4.9", color:"#db2777", init:"SS" }],
-  Dental:      [{ name:"Dr. Kiran Rao",    exp:"7 yrs",  rating:"4.8", color:"#2563eb", init:"KR" }],
-  Pathology:   [{ name:"Dr. Meena Joshi",  exp:"15 yrs", rating:"5.0", color:"#dc2626", init:"MJ" }],
-  Pediatrics:  [{ name:"Dr. Rekha Singh",  exp:"11 yrs", rating:"4.9", color:"#ea580c", init:"RS" }],
-  "Eye Care":  [{ name:"Dr. Suresh Iyer",  exp:"13 yrs", rating:"4.7", color:"#0891b2", init:"SI" }],
-};
-const SLOTS = ["9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM"];
-const DISABLED_SLOTS = ["10:00 AM","11:00 AM","3:00 PM"];
+
+const SLOTS = ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"];
 
 export default function BookAppointment() {
   injectCSS("book-css", CSS);
   const navigate = useNavigate();
-  const [step, setStep] = useState(0); // 0=dept, 1=doctor, 2=slot, 3=details, 4=success
-  const [sel, setSel] = useState({ dept:"", doctor:null, slot:"", date:"", type:"in-person", reason:"" });
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
-  useEffect(() => { if (!localStorage.getItem("user")) navigate("/login"); }, [navigate]);
+  const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [sel, setSel] = useState({
+    dept: "",
+    doctor: null,
+    slot: "",
+    date: "",
+    reason: "",
+  });
 
-  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  // Fetch doctors on mount
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      navigate("/login", { replace: true, state: { returnTo: "/appointments/book" } });
+      return;
+    }
+
+    const fetchDoctors = async () => {
+      try {
+        const response = await doctorAPI.getDoctors();
+        if (response.success) {
+          setAllDoctors(response.doctors || []);
+        }
+      } catch (err) {
+        setError("Failed to load doctors");
+      }
+    };
+
+    fetchDoctors();
+  }, [authLoading, isAuthenticated, navigate]);
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toISOString().split("T")[0];
 
-  const doctors = DOCTORS[sel.dept] || [];
+  // Filter doctors by department
+  const doctors = allDoctors.filter(
+    (d) => d.specialization && d.specialization.toLowerCase() === sel.dept.toLowerCase()
+  );
 
-  const confirm = () => {
-    // Here you'd POST to your API
-    setStep(4);
+  const confirm = async () => {
+    if (!sel.doctor || !sel.date || !sel.slot || !sel.reason) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await appointmentAPI.bookAppointment({
+        doctorId: sel.doctor._id,
+        appointmentDate: sel.date,
+        appointmentTime: sel.slot,
+        reason: sel.reason,
+      });
+
+      if (response.success) {
+        setStep(4);
+      } else {
+        setError(response.message || "Failed to book appointment");
+      }
+    } catch (err) {
+      setError(err.message || "An error occurred while booking");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const STEPS = ["Department","Doctor","Time Slot","Details"];
+  const STEPS = ["Department", "Doctor", "Time Slot", "Details"];
 
   return (
     <div className="page">
@@ -123,6 +189,8 @@ export default function BookAppointment() {
       <div className="content">
         <h1 className="page-title">Book Appointment</h1>
         <p className="page-sub">Follow the steps to schedule your visit</p>
+
+        {error && <div className="alert-error">⚠️ {error}</div>}
 
         {step < 4 && (
           <div className="step-indicator" style={{ flexWrap:"wrap", gap:4 }}>
@@ -162,18 +230,37 @@ export default function BookAppointment() {
         {step === 1 && (
           <div className="card">
             <div className="card-title">Choose a Doctor — {sel.dept}</div>
-            <div className="doc-grid">
-              {doctors.map(d => (
-                <div key={d.name} className={`doc-item${sel.doctor?.name===d.name?" selected":""}`} onClick={() => setSel(s=>({...s,doctor:d}))}>
-                  <div className="doc-av" style={{ background:d.color }}>{d.init}</div>
-                  <div className="doc-info"><h4>{d.name}</h4><p>{d.exp} experience</p></div>
-                  <span className="doc-rating">★ {d.rating}</span>
-                </div>
-              ))}
-            </div>
+            {doctors.length === 0 ? (
+              <p style={{ color: "#5f6f87" }}>No doctors available in this specialization</p>
+            ) : (
+              <div className="doc-grid">
+                {doctors.map((d) => (
+                  <div
+                    key={d._id}
+                    className={`doc-item${sel.doctor?._id === d._id ? " selected" : ""}`}
+                    onClick={() => setSel((s) => ({ ...s, doctor: d }))}
+                  >
+                    <div
+                      className="doc-av"
+                      style={{ background: `hsl(${Math.random() * 360}, 70%, 60%)` }}
+                    >
+                      {d.name.split(" ")[0][0]}{d.name.split(" ")[1]?.[0] || ""}
+                    </div>
+                    <div className="doc-info">
+                      <h4>{d.name}</h4>
+                      <p>{d.specialization}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="nav-btns">
-              <button className="btn-back" onClick={() => setStep(0)}>← Back</button>
-              <button className="btn-next" disabled={!sel.doctor} onClick={() => setStep(2)}>Next →</button>
+              <button className="btn-back" onClick={() => setStep(0)}>
+                ← Back
+              </button>
+              <button className="btn-next" disabled={!sel.doctor} onClick={() => setStep(2)}>
+                Next →
+              </button>
             </div>
           </div>
         )}
@@ -182,30 +269,35 @@ export default function BookAppointment() {
         {step === 2 && (
           <div className="card">
             <div className="card-title">Pick Date & Time</div>
-            <div className="form-group" style={{ marginBottom:24 }}>
+            <div className="form-group" style={{ marginBottom: 24 }}>
               <label className="form-label">Preferred Date</label>
-              <input className="form-input" type="date" min={minDate} value={sel.date} onChange={e => setSel(s=>({...s,date:e.target.value}))} />
-            </div>
-            <div className="form-group" style={{ marginBottom:24 }}>
-              <label className="form-label">Visit Type</label>
-              <select className="form-select" value={sel.type} onChange={e => setSel(s=>({...s,type:e.target.value}))}>
-                <option value="in-person">🏥 In-Person</option>
-                <option value="online">💻 Online Consultation</option>
-              </select>
+              <input
+                className="form-input"
+                type="date"
+                min={minDate}
+                value={sel.date}
+                onChange={(e) => setSel((s) => ({ ...s, date: e.target.value }))}
+              />
             </div>
             <label className="form-label">Available Slots</label>
-            <div className="slots-grid" style={{ marginTop:8 }}>
-              {SLOTS.map(slot => (
-                <div key={slot} className={`slot${sel.slot===slot?" selected":""} ${DISABLED_SLOTS.includes(slot)?" disabled":""}`}
-                  onClick={() => !DISABLED_SLOTS.includes(slot) && setSel(s=>({...s,slot}))}>
+            <div className="slots-grid" style={{ marginTop: 8 }}>
+              {SLOTS.map((slot) => (
+                <div
+                  key={slot}
+                  className={`slot${sel.slot === slot ? " selected" : ""}`}
+                  onClick={() => setSel((s) => ({ ...s, slot }))}
+                >
                   {slot}
                 </div>
               ))}
             </div>
-            <p style={{ fontSize:12, color:"#a0aec0", marginTop:10 }}>Greyed-out slots are already booked</p>
             <div className="nav-btns">
-              <button className="btn-back" onClick={() => setStep(1)}>← Back</button>
-              <button className="btn-next" disabled={!sel.date || !sel.slot} onClick={() => setStep(3)}>Next →</button>
+              <button className="btn-back" onClick={() => setStep(1)}>
+                ← Back
+              </button>
+              <button className="btn-next" disabled={!sel.date || !sel.slot} onClick={() => setStep(3)}>
+                Next →
+              </button>
             </div>
           </div>
         )}
@@ -214,19 +306,41 @@ export default function BookAppointment() {
         {step === 3 && (
           <div className="card">
             <div className="card-title">Appointment Summary</div>
-            <div style={{ background:"rgba(15,157,116,0.05)", border:"1px solid rgba(15,157,116,0.14)", borderRadius:14, padding:"16px 18px", marginBottom:22, fontSize:13, lineHeight:2, color:"#102033" }}>
-              <b>Department:</b> {sel.dept}<br/>
-              <b>Doctor:</b> {sel.doctor?.name}<br/>
-              <b>Date:</b> {sel.date} at {sel.slot}<br/>
-              <b>Type:</b> {sel.type === "in-person" ? "🏥 In-Person" : "💻 Online"}
+            <div
+              style={{
+                background: "rgba(15,157,116,0.05)",
+                border: "1px solid rgba(15,157,116,0.14)",
+                borderRadius: 14,
+                padding: "16px 18px",
+                marginBottom: 22,
+                fontSize: 13,
+                lineHeight: 2,
+                color: "#102033",
+              }}
+            >
+              <b>Department:</b> {sel.dept}
+              <br />
+              <b>Doctor:</b> {sel.doctor?.name}
+              <br />
+              <b>Date:</b> {sel.date} at {sel.slot}
+              <br />
             </div>
             <div className="form-group">
               <label className="form-label">Reason for Visit</label>
-              <textarea className="form-textarea" placeholder="Briefly describe your symptoms or reason…" value={sel.reason} onChange={e => setSel(s=>({...s,reason:e.target.value}))} />
+              <textarea
+                className="form-textarea"
+                placeholder="Briefly describe your symptoms or reason…"
+                value={sel.reason}
+                onChange={(e) => setSel((s) => ({ ...s, reason: e.target.value }))}
+              />
             </div>
             <div className="nav-btns">
-              <button className="btn-back" onClick={() => setStep(2)}>← Back</button>
-              <button className="btn-next" onClick={confirm}>✅ Confirm Booking</button>
+              <button className="btn-back" onClick={() => setStep(2)}>
+                ← Back
+              </button>
+              <button className="btn-next" onClick={confirm} disabled={loading || !sel.reason}>
+                {loading ? "Confirming…" : "✅ Confirm Booking"}
+              </button>
             </div>
           </div>
         )}
@@ -237,10 +351,29 @@ export default function BookAppointment() {
             <div className="success-state">
               <div className="tick">🎉</div>
               <h2>Appointment Booked!</h2>
-              <p>Your appointment with <b>{sel.doctor?.name}</b> ({sel.dept})<br/>has been confirmed for <b>{sel.date}</b> at <b>{sel.slot}</b>.</p>
-              <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-                <button className="btn-next" onClick={() => navigate("/appointments")}>View Appointments</button>
-                <button className="btn-back" onClick={() => { setSel({ dept:"",doctor:null,slot:"",date:"",type:"in-person",reason:"" }); setStep(0); }}>Book Another</button>
+              <p>
+                Your appointment with <b>{sel.doctor?.name}</b> ({sel.dept})
+                <br />
+                has been confirmed for <b>{sel.date}</b> at <b>{sel.slot}</b>.
+              </p>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                <button
+                  className="btn-next"
+                  onClick={() => navigate("/appointments")}
+                  style={{ marginTop: 0 }}
+                >
+                  View Appointments
+                </button>
+                <button
+                  className="btn-back"
+                  onClick={() => {
+                    setSel({ dept: "", doctor: null, slot: "", date: "", reason: "" });
+                    setStep(0);
+                    setError("");
+                  }}
+                >
+                  Book Another
+                </button>
               </div>
             </div>
           </div>

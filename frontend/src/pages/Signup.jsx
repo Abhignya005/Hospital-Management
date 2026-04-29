@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { authAPI } from "../services/api";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -101,7 +102,15 @@ function passwordStrength(p) {
 export default function Signup() {
   injectCSS("signup-css", CSS);
   const navigate = useNavigate();
-  const [form, setForm] = useState({ firstName:"", lastName:"", email:"", phone:"", dob:"", gender:"", password:"", confirm:"", role:"patient", terms: false });
+  const [form, setForm] = useState({ 
+    name: "", 
+    email: "", 
+    password: "", 
+    confirm: "", 
+    gender: "",
+    role: "patient",
+    terms: false 
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const strength = passwordStrength(form.password);
@@ -114,20 +123,47 @@ export default function Signup() {
   const submit = async (e) => {
     e.preventDefault();
     setError("");
-    if (form.password !== form.confirm) { setError("Passwords do not match."); return; }
-    if (!form.terms) { setError("Please accept the terms and conditions."); return; }
-    if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+    // Validations
+    if (!form.name || !form.email || !form.password) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (!form.terms) {
+      setError("Please accept the terms and conditions.");
+      return;
+    }
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800)); // simulate API
 
-    // ── Replace with real API call ──
-    const user = { name: `${form.firstName} ${form.lastName}`, email: form.email, role: form.role };
-    localStorage.setItem("user",  JSON.stringify(user));
-    localStorage.setItem("token", "demo-token-" + Date.now());
-    // ── End replace ──
+    try {
+      const response = await authAPI.signup({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        gender: form.gender || undefined,
+        role: form.role,
+      });
 
-    navigate(form.role === "doctor" ? "/doctor/dashboard" : "/dashboard");
+      if (response.success) {
+        // User created successfully
+        navigate("/login");
+      } else {
+        setError(response.message || "Signup failed. Please try again.");
+      }
+    } catch (err) {
+      setError(err.message || "An error occurred during signup.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -140,47 +176,13 @@ export default function Signup() {
         {error && <div className="alert-error">⚠️ {error}</div>}
 
         <form onSubmit={submit}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">First Name</label>
-              <input className="form-input" name="firstName" placeholder="Ravi" value={form.firstName} onChange={handle} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Last Name</label>
-              <input className="form-input" name="lastName" placeholder="Kumar" value={form.lastName} onChange={handle} required />
-            </div>
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
+            <input className="form-input" name="name" placeholder="John Doe" value={form.name} onChange={handle} required />
           </div>
           <div className="form-group">
             <label className="form-label">Email address</label>
             <input className="form-input" type="email" name="email" placeholder="you@example.com" value={form.email} onChange={handle} required />
-          </div>
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Phone Number</label>
-              <input className="form-input" type="tel" name="phone" placeholder="+91 9000000000" value={form.phone} onChange={handle} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Date of Birth</label>
-              <input className="form-input" type="date" name="dob" value={form.dob} onChange={handle} />
-            </div>
-          </div>
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Gender</label>
-              <select className="form-select" name="gender" value={form.gender} onChange={handle}>
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Role</label>
-              <select className="form-select" name="role" value={form.role} onChange={handle}>
-                <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
-              </select>
-            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
@@ -197,6 +199,28 @@ export default function Signup() {
           <div className="form-group">
             <label className="form-label">Confirm Password</label>
             <input className="form-input" type="password" name="confirm" placeholder="Re-enter password" value={form.confirm} onChange={handle} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Gender</label>
+            <select className="form-select" name="gender" value={form.gender} onChange={handle}>
+              <option value="">Prefer not to say</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Account Type</label>
+            <div style={{ display: 'flex', gap: '24px', marginTop: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#102033', fontWeight: '500' }}>
+                <input type="radio" name="role" value="patient" checked={form.role === "patient"} onChange={handle} style={{ accentColor: '#0f9d74', cursor: 'pointer' }} />
+                Patient
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#102033', fontWeight: '500' }}>
+                <input type="radio" name="role" value="doctor" checked={form.role === "doctor"} onChange={handle} style={{ accentColor: '#0f9d74', cursor: 'pointer' }} />
+                Doctor
+              </label>
+            </div>
           </div>
           <label className="terms-check">
             <input type="checkbox" name="terms" checked={form.terms} onChange={handle} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
+import { appointmentAPI } from "../services/api";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -76,19 +77,6 @@ function injectCSS(id, css) {
   document.head.appendChild(s);
 }
 
-const APPOINTMENTS = [
-  { doctor: "Dr. Priya Reddy",  dept: "Cardiology",    date: "Today, 3:00 PM",     status: "confirmed", color: "#059669", init: "PR" },
-  { doctor: "Dr. Arjun Mehta",  dept: "Neurology",     date: "28 Apr, 10:30 AM",   status: "pending",   color: "#0d9488", init: "AM" },
-  { doctor: "Dr. Sneha Sharma", dept: "Orthopedics",   date: "2 May, 9:00 AM",     status: "confirmed", color: "#7c3aed", init: "SS" },
-];
-
-const METRICS = [
-  { name: "Blood Pressure", value: "120/80 mmHg", status: "normal",  color: "#10b981" },
-  { name: "Blood Sugar",    value: "95 mg/dL",    status: "normal",  color: "#10b981" },
-  { name: "Heart Rate",     value: "88 bpm",      status: "high",    color: "#ef4444" },
-  { name: "Cholesterol",    value: "195 mg/dL",   status: "normal",  color: "#10b981" },
-];
-
 const QUICK = [
   { icon: "📅", label: "Book Appointment", to: "/appointments/book" },
   { icon: "🗂️", label: "Health Records",   to: "/records" },
@@ -100,15 +88,38 @@ export default function Dashboard() {
   injectCSS("dash-css", CSS);
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("user") || "null");
     if (!u) { navigate("/login"); return; }
     setUser(u);
+    
+    // Redirect doctors to their appointments page
+    if (u.role === "doctor") {
+      navigate("/doctor/appointments");
+      return;
+    }
   }, [navigate]);
+
+  useEffect(() => {
+    const loadAppointments = async () => {
+      const response = await appointmentAPI.getAppointments();
+      if (response.success) {
+        setAppointments(response.appointments || []);
+      }
+      setAppointmentsLoading(false);
+    };
+
+    if (user) {
+      loadAppointments().catch(() => setAppointmentsLoading(false));
+    }
+  }, [user]);
 
   const now = new Date().toLocaleDateString("en-IN", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
   const firstName = user?.name?.split(" ")[0] || "there";
+  const upcomingAppointments = appointments.filter((appointment) => appointment.status !== "cancelled");
 
   if (!user) return null;
 
@@ -124,10 +135,10 @@ export default function Dashboard() {
         {/* Stats */}
         <div className="stats-row">
           {[
-            { icon:"📅", bg:"rgba(15,157,116,0.10)", label:"Total Appointments", value:"12" },
-            { icon:"✅", bg:"rgba(47,143,182,0.10)",  label:"Completed",          value:"9"  },
-            { icon:"⏳", bg:"rgba(245,158,11,0.10)",  label:"Upcoming",           value:"3"  },
-            { icon:"📋", bg:"rgba(139,92,246,0.10)",  label:"Health Records",     value:"7"  },
+            { icon:"📅", bg:"rgba(15,157,116,0.10)",  label:"Total Appointments", value: appointmentsLoading ? "…" : String(appointments.length) },
+            { icon:"✅", bg:"rgba(47,143,182,0.10)",   label:"Completed",          value: appointmentsLoading ? "…" : String(appointments.filter((appointment) => appointment.status === "completed").length) },
+            { icon:"⏳", bg:"rgba(245,158,11,0.10)",   label:"Upcoming",           value: appointmentsLoading ? "…" : String(upcomingAppointments.filter((appointment) => appointment.status === "pending" || appointment.status === "confirmed").length) },
+            { icon:"📋", bg:"rgba(139,92,246,0.10)",   label:"Health Records",     value:"0" },
           ].map(s => (
             <div className="stat-card" key={s.label}>
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -143,14 +154,30 @@ export default function Dashboard() {
               <span>📅 Upcoming Appointments</span>
               <Link to="/appointments">View all →</Link>
             </div>
-            {APPOINTMENTS.map(a => (
-              <div className="appt-item" key={a.doctor}>
-                <div className="appt-avatar" style={{ background: a.color }}>{a.init}</div>
+            {appointmentsLoading ? (
+              <div className="appt-item">
                 <div className="appt-info">
-                  <p>{a.doctor}</p>
-                  <span>{a.dept} · {a.date}</span>
+                  <p>Loading appointments...</p>
+                  <span>Fetching your saved bookings</span>
                 </div>
-                <span className={`appt-badge badge-${a.status}`}>{a.status}</span>
+              </div>
+            ) : upcomingAppointments.length === 0 ? (
+              <div className="appt-item">
+                <div className="appt-info">
+                  <p>No appointments yet</p>
+                  <span>Book your first appointment to see it here.</span>
+                </div>
+              </div>
+            ) : upcomingAppointments.slice(0, 3).map((appointment) => (
+              <div className="appt-item" key={appointment._id}>
+                <div className="appt-avatar" style={{ background: "linear-gradient(135deg,#0f9d74,#2f8fb6)" }}>
+                  {(appointment.doctorId?.name || "D").split(" ").map((word) => word[0]).join("").toUpperCase().slice(0, 2)}
+                </div>
+                <div className="appt-info">
+                  <p>{appointment.doctorId?.name || "Unknown Doctor"}</p>
+                  <span>{appointment.doctorId?.specialization || "Specialist"} · {new Date(appointment.appointmentDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                </div>
+                <span className={`appt-badge badge-${appointment.status}`}>{appointment.status}</span>
               </div>
             ))}
           </div>
@@ -174,16 +201,12 @@ export default function Dashboard() {
               <span>❤️ Health Metrics</span>
               <Link to="/records">Update →</Link>
             </div>
-            {METRICS.map(m => (
-              <div className="health-metric" key={m.name}>
-                <div className="metric-left">
-                  <div className="metric-dot" style={{ background: m.color }} />
-                  <span className="metric-name">{m.name}</span>
-                </div>
-                <span className="metric-value">{m.value}</span>
-                <span className={`metric-status status-${m.status}`}>{m.status}</span>
+            <div className="appt-item" style={{ borderBottom: "none" }}>
+              <div className="appt-info">
+                <p>No health metrics connected yet</p>
+                <span>Real vitals will appear here once the records module is integrated.</span>
               </div>
-            ))}
+            </div>
           </div>
 
           {/* Recent records */}
@@ -192,18 +215,12 @@ export default function Dashboard() {
               <span>🗂️ Recent Records</span>
               <Link to="/records">View all →</Link>
             </div>
-            {[
-              { icon:"🩸", name:"Blood Test Report",      date:"20 Apr 2025", type:"Lab Report" },
-              { icon:"🫀", name:"ECG Report",             date:"15 Apr 2025", type:"Cardiac"    },
-              { icon:"💊", name:"Prescription — Cardio",  date:"10 Apr 2025", type:"Prescription"},
-              { icon:"🔬", name:"Urine Analysis",         date:"5 Apr 2025",  type:"Lab Report" },
-            ].map(r => (
-              <div className="appt-item" key={r.name}>
-                <div className="appt-avatar" style={{ background:"#e0f4ff", fontSize:20 }}>{r.icon}</div>
-                <div className="appt-info"><p>{r.name}</p><span>{r.type} · {r.date}</span></div>
-                <span style={{ fontSize:12, color:"#0f9d74", cursor:"pointer", fontWeight:600 }}>View</span>
+            <div className="appt-item" style={{ borderBottom: "none" }}>
+              <div className="appt-info">
+                <p>No records uploaded yet</p>
+                <span>Upload real reports here once records support is connected.</span>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>

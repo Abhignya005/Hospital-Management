@@ -35,16 +35,6 @@ const CSS = `
 `;
 function injectCSS(id, css) { if (document.getElementById(id)) return; const s = document.createElement("style"); s.id = id; s.textContent = css; document.head.appendChild(s); }
 
-const RECORDS = [
-  { id:1, name:"Blood Test Report",       type:"Lab Report",    date:"20 Apr 2025", doctor:"Dr. Meena Joshi",  icon:"🩸", bg:"rgba(239,68,68,0.10)",    cat:"lab"          },
-  { id:2, name:"ECG Report",              type:"Cardiac",       date:"15 Apr 2025", doctor:"Dr. Priya Reddy",  icon:"🫀", bg:"rgba(15,157,116,0.10)",   cat:"cardiac"      },
-  { id:3, name:"Prescription — Cardio",   type:"Prescription",  date:"10 Apr 2025", doctor:"Dr. Priya Reddy",  icon:"💊", bg:"rgba(139,92,246,0.10)",   cat:"prescription" },
-  { id:4, name:"Urine Analysis",          type:"Lab Report",    date:"5 Apr 2025",  doctor:"Dr. Meena Joshi",  icon:"🔬", bg:"rgba(47,143,182,0.10)",   cat:"lab"          },
-  { id:5, name:"X-Ray — Right Knee",      type:"Radiology",     date:"1 Apr 2025",  doctor:"Dr. Sneha Sharma", icon:"🦴", bg:"rgba(245,158,11,0.10)",   cat:"radiology"    },
-  { id:6, name:"Prescription — Neuro",    type:"Prescription",  date:"28 Mar 2025", doctor:"Dr. Arjun Mehta",  icon:"💊", bg:"rgba(139,92,246,0.10)",   cat:"prescription" },
-  { id:7, name:"Ophthalmology Report",    type:"Eye Care",      date:"20 Mar 2025", doctor:"Dr. Suresh Iyer",  icon:"👁️", bg:"rgba(8,145,178,0.10)",    cat:"other"        },
-];
-
 const CATS = ["all","lab","prescription","radiology","cardiac","other"];
 
 export default function Records() {
@@ -54,7 +44,7 @@ export default function Records() {
 
   useEffect(() => { if (!localStorage.getItem("user")) navigate("/login"); }, [navigate]);
 
-  const filtered = cat === "all" ? RECORDS : RECORDS.filter(r => r.cat === cat);
+  const filtered = [];
 
   return (
     <div className="page">
@@ -75,20 +65,14 @@ export default function Records() {
           ))}
         </div>
 
-        {filtered.map(r => (
-          <div className="record-card" key={r.id}>
-            <div className="rec-icon" style={{ background: r.bg }}>{r.icon}</div>
+        {filtered.length === 0 ? (
+          <div className="record-card" style={{ justifyContent: "center", textAlign: "center" }}>
             <div className="rec-main">
-              <h3>{r.name}</h3>
-              <p>{r.type} · {r.date} · {r.doctor}</p>
-            </div>
-            <span className="rec-badge" style={{ background: r.bg, color:"#102033" }}>{r.type}</span>
-            <div className="rec-actions">
-              <button className="btn-icon">👁 View</button>
-              <button className="btn-icon">⬇ Download</button>
+              <h3>No records yet</h3>
+              <p>Your real health records will appear here once the backend records module is connected.</p>
             </div>
           </div>
-        ))}
+        ) : null}
       </div>
     </div>
   );
