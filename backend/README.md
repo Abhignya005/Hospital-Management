@@ -76,6 +76,27 @@ npm start
 
 Server will start on: `http://localhost:5000`
 
+## Health Check Endpoint
+
+Use this endpoint to verify that both the API and MongoDB connection are healthy.
+
+- Method: `GET`
+- URL: `/api/health`
+- Success status: `200`
+- DB disconnected status: `503`
+
+Sample response:
+
+```json
+{
+  "success": true,
+  "api": "ok",
+  "database": "connected",
+  "timestamp": "2026-04-27T10:00:00.000Z",
+  "uptimeSeconds": 123
+}
+```
+
 ## Database Models Explanation
 
 ### User Model
@@ -110,6 +131,9 @@ curl -X POST http://localhost:5000/api/auth/login \
 
 # Get All Doctors
 curl http://localhost:5000/api/doctors
+
+# Health Check
+curl http://localhost:5000/api/health
 
 # Book Appointment (requires token)
 curl -X POST http://localhost:5000/api/appointments \

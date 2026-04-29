@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Navbar from "../Components/Navbar";
-import { appointmentAPI } from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -58,74 +56,20 @@ const CSS = `
 `;
 function injectCSS(id, css) { if (document.getElementById(id)) return; const s = document.createElement("style"); s.id = id; s.textContent = css; document.head.appendChild(s); }
 
-function formatDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function initialsFromName(name = "") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "A";
-}
-
-function colorFromName(name = "") {
-  let hash = 0;
-  for (let i = 0; i < name.length; i += 1) {
-    hash = (hash * 31 + name.charCodeAt(i)) % 360;
-  }
-  return `hsl(${hash}, 65%, 50%)`;
-}
+const ALL_APPTS = [
+  { id:1, doctor:"Dr. Priya Reddy",  dept:"Cardiology",  date:"27 Apr 2025", time:"3:00 PM",  type:"In-Person", status:"confirmed", color:"#059669", init:"PR" },
+  { id:2, doctor:"Dr. Arjun Mehta",  dept:"Neurology",   date:"28 Apr 2025", time:"10:30 AM", type:"Online",    status:"pending",   color:"#0d9488", init:"AM" },
+  { id:3, doctor:"Dr. Sneha Sharma", dept:"Orthopedics", date:"2 May 2025",  time:"9:00 AM",  type:"In-Person", status:"confirmed", color:"#7c3aed", init:"SS" },
+  { id:4, doctor:"Dr. Kiran Rao",    dept:"Dental",      date:"10 Apr 2025", time:"11:00 AM", type:"In-Person", status:"completed", color:"#2563eb", init:"KR" },
+  { id:5, doctor:"Dr. Meena Joshi",  dept:"Pathology",   date:"5 Apr 2025",  time:"8:30 AM",  type:"Lab Visit", status:"completed", color:"#db2777", init:"MJ" },
+  { id:6, doctor:"Dr. Vikram Nair",  dept:"General",     date:"1 Apr 2025",  time:"4:00 PM",  type:"Online",    status:"cancelled", color:"#64748b", init:"VN" },
+];
 
 export default function Appointments() {
   injectCSS("appt-css", CSS);
-  const navigate = useNavigate();
   const [filter, setFilter] = useState("all");
-  const { isAuthenticated, loading: authLoading } = useAuth();
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (authLoading) return;
-
-    if (!isAuthenticated) {
-      navigate("/login", { replace: true, state: { returnTo: "/appointments" } });
-      return;
-    }
-
-    const fetchAppointments = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await appointmentAPI.getAppointments();
-        if (response.success) {
-          setAppointments(response.appointments || []);
-        } else {
-          setError(response.message || "Failed to load appointments");
-        }
-      } catch (fetchError) {
-        setError(fetchError.message || "Failed to load appointments");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
-  }, [authLoading, isAuthenticated, navigate]);
-
-  const filtered = filter === "all"
-    ? appointments
-    : appointments.filter((appointment) => appointment.status === filter);
-
-  const totalCount = appointments.length;
+  const filtered = filter === "all" ? ALL_APPTS : ALL_APPTS.filter(a => a.status === filter);
 
   return (
     <div className="page">
@@ -138,63 +82,37 @@ export default function Appointments() {
           </Link>
         </div>
 
-        {error && <div className="alert-error">⚠️ {error}</div>}
+        <div className="filter-tabs">
+          {["all","confirmed","pending","completed","cancelled"].map(f => (
+            <button key={f} className={`filter-tab${filter===f?" active":""}`} onClick={() => setFilter(f)}>
+              {f.charAt(0).toUpperCase()+f.slice(1)} {f==="all" ? `(${ALL_APPTS.length})` : `(${ALL_APPTS.filter(a=>a.status===f).length})`}
+            </button>
+          ))}
+        </div>
 
-        {loading ? (
-          <div className="empty-state">
-            <div>⏳</div>
-            <h3>Loading appointments</h3>
-            <p>Fetching your bookings from the database.</p>
-          </div>
-        ) : (
-          <>
-            <div className="filter-tabs">
-              {[
-                "all",
-                "pending",
-                "confirmed",
-                "completed",
-                "cancelled",
-              ].map((status) => (
-                <button
-                  key={status}
-                  className={`filter-tab${filter===status?" active":""}`}
-                  onClick={() => setFilter(status)}
-                >
-                  {status.charAt(0).toUpperCase()+status.slice(1)} {status==="all" ? `(${totalCount})` : `(${appointments.filter((appointment) => appointment.status === status).length})`}
-                </button>
-              ))}
+        {filtered.length === 0 ? (
+          <div className="empty-state"><div>📭</div><h3>No {filter} appointments</h3><p>Book an appointment to get started.</p></div>
+        ) : filtered.map(a => (
+          <div className="appt-card" key={a.id}>
+            <div className="doc-avatar" style={{ background: a.color }}>{a.init}</div>
+            <div className="appt-main">
+              <h3>{a.doctor}</h3>
+              <p>{a.dept}</p>
             </div>
-
-            {filtered.length === 0 ? (
-              <div className="empty-state">
-                <div>📭</div>
-                <h3>No {filter} appointments</h3>
-                <p>Book an appointment to get started.</p>
+            <div className="appt-meta">
+              <span className="meta-chip">📅 {a.date}</span>
+              <span className="meta-chip">🕐 {a.time}</span>
+              <span className="meta-chip">📍 {a.type}</span>
+            </div>
+            <span className={`badge badge-${a.status}`}>{a.status}</span>
+            {(a.status === "confirmed" || a.status === "pending") && (
+              <div className="appt-actions">
+                <button className="btn-sm btn-sm-primary">Reschedule</button>
+                <button className="btn-sm btn-sm-ghost">Cancel</button>
               </div>
-            ) : filtered.map((appointment) => {
-              const doctorName = appointment.doctorId?.name || "Unknown Doctor";
-              const specialization = appointment.doctorId?.specialization || "Specialist";
-              const avatarColor = colorFromName(doctorName);
-              return (
-                <div className="appt-card" key={appointment._id}>
-                  <div className="doc-avatar" style={{ background: avatarColor }}>
-                    {initialsFromName(doctorName)}
-                  </div>
-                  <div className="appt-main">
-                    <h3>{doctorName}</h3>
-                    <p>{specialization}</p>
-                  </div>
-                  <div className="appt-meta">
-                    <span className="meta-chip">📅 {formatDate(appointment.appointmentDate)}</span>
-                    <span className="meta-chip">🕐 {appointment.appointmentTime}</span>
-                  </div>
-                  <span className={`badge badge-${appointment.status}`}>{appointment.status}</span>
-                </div>
-              );
-            })}
-          </>
-        )}
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

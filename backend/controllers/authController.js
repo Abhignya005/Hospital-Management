@@ -21,7 +21,7 @@ const generateToken = (id) => {
  */
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, phone, age, gender } = req.body;
+    const { name, email, password, phone, age, gender, role } = req.body;
 
     // Validation
     if (!name || !email || !password) {
@@ -52,6 +52,7 @@ exports.signup = async (req, res) => {
       phone,
       age,
       gender,
+      role: role || 'patient',
     });
 
     // Generate token

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -102,6 +103,7 @@ function passwordStrength(p) {
 export default function Signup() {
   injectCSS("signup-css", CSS);
   const navigate = useNavigate();
+  const { login: setAuth } = useAuth();
   const [form, setForm] = useState({ 
     name: "", 
     email: "", 
@@ -154,8 +156,9 @@ export default function Signup() {
       });
 
       if (response.success) {
-        // User created successfully
-        navigate("/login");
+        // User created successfully — log them in and update AuthContext
+        setAuth(response.user, response.token);
+        navigate("/dashboard", { replace: true });
       } else {
         setError(response.message || "Signup failed. Please try again.");
       }

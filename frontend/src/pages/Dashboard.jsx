@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
+import { useAuth } from "../context/AuthContext";
 import { appointmentAPI } from "../services/api";
 
 const CSS = `
@@ -87,21 +88,16 @@ const QUICK = [
 export default function Dashboard() {
   injectCSS("dash-css", CSS);
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
 
+  // Redirect doctors to their appointments page
   useEffect(() => {
-    const u = JSON.parse(localStorage.getItem("user") || "null");
-    if (!u) { navigate("/login"); return; }
-    setUser(u);
-    
-    // Redirect doctors to their appointments page
-    if (u.role === "doctor") {
-      navigate("/doctor/appointments");
-      return;
+    if (user && user.role === "doctor") {
+      navigate("/doctor/appointments", { replace: true });
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
   useEffect(() => {
     const loadAppointments = async () => {

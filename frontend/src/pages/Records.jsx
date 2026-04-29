@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import Navbar from "../Components/Navbar";
 
 const CSS = `
@@ -39,10 +38,7 @@ const CATS = ["all","lab","prescription","radiology","cardiac","other"];
 
 export default function Records() {
   injectCSS("rec-css", CSS);
-  const navigate = useNavigate();
   const [cat, setCat] = useState("all");
-
-  useEffect(() => { if (!localStorage.getItem("user")) navigate("/login"); }, [navigate]);
 
   const filtered = [];
 

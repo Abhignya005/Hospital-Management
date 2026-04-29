@@ -2,11 +2,9 @@
  * Appointment Controller
  * Handles appointment booking and management
  */
-
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
-
 /**
  * @route /api/appointments
  * @method GET
@@ -21,8 +19,20 @@ exports.getAppointments = async (req, res) => {
       appointments = await Appointment.find()
         .populate('userId', 'name email phone')
         .populate('doctorId', 'name specialization');
+    } else if (req.user.role === 'doctor') {
+      // If user is a doctor, get appointments assigned to them
+      // Find doctor record by user email
+      const doctor = await Doctor.findOne({ email: req.user.email });
+      if (doctor) {
+        appointments = await Appointment.find({ doctorId: doctor._id })
+          .populate('userId', 'name email phone')
+          .populate('doctorId', 'name specialization')
+          .sort({ appointmentDate: 1 });
+      } else {
+        appointments = [];
+      }
     } else {
-      // Otherwise get only user's appointments
+      // Otherwise get only patient's appointments
       appointments = await Appointment.find({ userId: req.user.id })
         .populate('userId', 'name email phone')
         .populate('doctorId', 'name specialization');
@@ -140,6 +150,17 @@ exports.updateAppointment = async (req, res) => {
         success: false,
         message: 'Appointment not found',
       });
+    }
+
+    if (req.user.role === 'doctor') {
+      const doctor = await Doctor.findOne({ email: req.user.email });
+
+      if (!doctor || appointment.doctorId.toString() !== doctor._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not authorized to update this appointment',
+        });
+      }
     }
 
     if (status) appointment.status = status;

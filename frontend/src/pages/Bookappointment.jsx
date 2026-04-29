@@ -120,15 +120,6 @@ export default function BookAppointment() {
 
   // Fetch doctors on mount
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      navigate("/login", { replace: true, state: { returnTo: "/appointments/book" } });
-      return;
-    }
-
     const fetchDoctors = async () => {
       try {
         const response = await doctorAPI.getDoctors();
@@ -141,7 +132,7 @@ export default function BookAppointment() {
     };
 
     fetchDoctors();
-  }, [authLoading, isAuthenticated, navigate]);
+  }, []);
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);

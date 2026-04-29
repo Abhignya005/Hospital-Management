@@ -19,8 +19,8 @@ router.get('/', protect, getAppointments);
 router.post('/', protect, bookAppointment);
 router.get('/:id', protect, getAppointmentById);
 
-// Admin only routes
-router.put('/:id', protect, authorize('admin'), updateAppointment);
+// Admin/doctor routes
+router.put('/:id', protect, authorize('admin', 'doctor'), updateAppointment);
 router.delete('/:id', protect, authorize('admin'), cancelAppointment);
 
 module.exports = router;

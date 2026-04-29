@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -95,6 +96,7 @@ export default function Login() {
   injectCSS("login-css", CSS);
   const navigate = useNavigate();
   const location = useLocation();
+  const { login: setAuth } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -110,6 +112,8 @@ export default function Login() {
       const response = await authAPI.login(form.email, form.password);
       
       if (response.success) {
+        // Update AuthContext so protected routes recognize the user
+        setAuth(response.user, response.token);
         // Token and user are automatically saved in localStorage by authAPI
         navigate(location.state?.returnTo || "/dashboard", { replace: true });
       } else {
