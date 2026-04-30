@@ -8,11 +8,12 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
+const seedDoctors = require('./config/seedDoctors');
 
 const app = express();
 
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -30,6 +31,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/doctors', require('./routes/doctorRoutes'));
 app.use('/api/appointments', require('./routes/appointmentRoutes'));
 app.use('/api/pharmacy', require('./routes/pharmacyRoutes'));
+app.use('/api/records', require('./routes/recordRoutes'));
 
 // Home route
 app.get('/', (req, res) => {
@@ -70,12 +72,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Start server only after DB connection is established
 const startServer = async () => {
   try {
     await connectDB();
+    
+    // Seed doctors if database is empty
+    await seedDoctors();
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

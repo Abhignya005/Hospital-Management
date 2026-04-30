@@ -41,8 +41,18 @@ export const authAPI = {
         headers: getHeaders(false),
         body: JSON.stringify(data),
       });
+
+      // If response is not ok, try to return useful info
+      if (!response.ok) {
+        let body;
+        try { body = await response.json(); } catch (e) { body = await response.text(); }
+        console.error('Signup failed', response.status, body);
+        return { success: false, status: response.status, message: body?.message || body || response.statusText };
+      }
+
       return response.json();
     } catch (error) {
+      console.error('Signup fetch error', error);
       return handleError(error);
     }
   },
@@ -54,6 +64,13 @@ export const authAPI = {
         headers: getHeaders(false),
         body: JSON.stringify({ email, password }),
       });
+      if (!response.ok) {
+        let body;
+        try { body = await response.json(); } catch (e) { body = await response.text(); }
+        console.error('Login failed', response.status, body);
+        return { success: false, status: response.status, message: body?.message || body || response.statusText };
+      }
+
       const data = await response.json();
       if (data.success && data.token) {
         localStorage.setItem('token', data.token);
@@ -61,6 +78,7 @@ export const authAPI = {
       }
       return data;
     } catch (error) {
+      console.error('Login fetch error', error);
       return handleError(error);
     }
   },
@@ -217,7 +235,7 @@ export const appointmentAPI = {
 export const pharmacyAPI = {
   getMedicines: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/pharmacy`, {
+      const response = await fetch(`${API_BASE_URL}/pharmacy/medicines`, {
         method: 'GET',
         headers: getHeaders(false),
       });
@@ -229,7 +247,7 @@ export const pharmacyAPI = {
 
   getMedicineById: async (id) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/pharmacy/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/pharmacy/medicines/${id}`, {
         method: 'GET',
         headers: getHeaders(false),
       });
@@ -240,9 +258,78 @@ export const pharmacyAPI = {
   },
 };
 
-export default {
-  authAPI,
-  doctorAPI,
-  appointmentAPI,
-  pharmacyAPI,
+// ============ HEALTH RECORDS ENDPOINTS ============
+export const recordAPI = {
+  getUserRecords: async (type = 'all') => {
+    try {
+      const url = type === 'all' ? `${API_BASE_URL}/records` : `${API_BASE_URL}/records?type=${type}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getHeaders(true),
+      });
+      return response.json();
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  getRecord: async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/records/${id}`, {
+        method: 'GET',
+        headers: getHeaders(true),
+      });
+      return response.json();
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  createRecord: async (recordData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/records`, {
+        method: 'POST',
+        headers: getHeaders(true),
+        body: JSON.stringify(recordData),
+      });
+      return response.json();
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  updateRecord: async (id, recordData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/records/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(true),
+        body: JSON.stringify(recordData),
+      });
+      return response.json();
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  deleteRecord: async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/records/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders(true),
+      });
+      return response.json();
+    } catch (error) {
+      return handleError(error);
+    }
+  },
 };
+
+const apiExport = {
+  auth: authAPI,
+  doctors: doctorAPI,
+  appointments: appointmentAPI,
+  pharmacy: pharmacyAPI,
+  records: recordAPI,
+};
+
+export default apiExport;

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import { useAuth } from "../context/AuthContext";
-import { appointmentAPI } from "../services/api";
+import { appointmentAPI, recordAPI } from "../services/api";
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -35,6 +35,8 @@ const CSS = `
 
   .appt-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(15,23,42,0.05); }
   .appt-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .appt-item-link { text-decoration: none; color: inherit; display: block; border-radius: 10px; }
+  .appt-item-link:hover .appt-item { background: rgba(15,157,116,0.05); border-radius: 10px; padding: 12px; margin: 0 -12px; }
   .appt-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
   .appt-info { flex: 1; }
   .appt-info p { font-size: 14px; font-weight: 600; color: #102033; }
@@ -81,7 +83,7 @@ function injectCSS(id, css) {
 const QUICK = [
   { icon: "📅", label: "Book Appointment", to: "/appointments/book" },
   { icon: "🗂️", label: "Health Records",   to: "/records" },
-  { icon: "💊", label: "Prescriptions",    to: "/records" },
+  { icon: "💊", label: "Prescriptions",    to: "/prescriptions" },
   { icon: "👤", label: "My Profile",       to: "/profile" },
 ];
 
@@ -91,6 +93,8 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
+  const [records, setRecords] = useState([]);
+  const [recordsLoading, setRecordsLoading] = useState(true);
 
   // Redirect doctors to their appointments page
   useEffect(() => {
@@ -108,8 +112,17 @@ export default function Dashboard() {
       setAppointmentsLoading(false);
     };
 
+    const loadRecords = async () => {
+      const response = await recordAPI.getUserRecords("all");
+      if (response.success) {
+        setRecords(response.records || []);
+      }
+      setRecordsLoading(false);
+    };
+
     if (user) {
       loadAppointments().catch(() => setAppointmentsLoading(false));
+      loadRecords().catch(() => setRecordsLoading(false));
     }
   }, [user]);
 
@@ -134,7 +147,7 @@ export default function Dashboard() {
             { icon:"📅", bg:"rgba(15,157,116,0.10)",  label:"Total Appointments", value: appointmentsLoading ? "…" : String(appointments.length) },
             { icon:"✅", bg:"rgba(47,143,182,0.10)",   label:"Completed",          value: appointmentsLoading ? "…" : String(appointments.filter((appointment) => appointment.status === "completed").length) },
             { icon:"⏳", bg:"rgba(245,158,11,0.10)",   label:"Upcoming",           value: appointmentsLoading ? "…" : String(upcomingAppointments.filter((appointment) => appointment.status === "pending" || appointment.status === "confirmed").length) },
-            { icon:"📋", bg:"rgba(139,92,246,0.10)",   label:"Health Records",     value:"0" },
+            { icon:"📋", bg:"rgba(139,92,246,0.10)",   label:"Health Records",     value: recordsLoading ? "…" : String(records.length) },
           ].map(s => (
             <div className="stat-card" key={s.label}>
               <div className="stat-icon" style={{ background: s.bg }}>{s.icon}</div>
@@ -211,12 +224,34 @@ export default function Dashboard() {
               <span>🗂️ Recent Records</span>
               <Link to="/records">View all →</Link>
             </div>
-            <div className="appt-item" style={{ borderBottom: "none" }}>
-              <div className="appt-info">
-                <p>No records uploaded yet</p>
-                <span>Upload real reports here once records support is connected.</span>
+            {recordsLoading ? (
+              <div className="appt-item" style={{ borderBottom: "none" }}>
+                <div className="appt-info">
+                  <p>Loading records...</p>
+                  <span>Fetching your uploaded reports</span>
+                </div>
               </div>
-            </div>
+            ) : records.length === 0 ? (
+              <div className="appt-item" style={{ borderBottom: "none" }}>
+                <div className="appt-info">
+                  <p>No records uploaded yet</p>
+                  <span>Upload your first report from Health Records.</span>
+                </div>
+              </div>
+            ) : records.slice(0, 3).map((record) => (
+              <Link key={record._id} className="appt-item-link" to={`/records?recordId=${record._id}`}>
+                <div className="appt-item">
+                  <div className="appt-avatar" style={{ background: "linear-gradient(135deg,#64748b,#334155)" }}>
+                    📄
+                  </div>
+                  <div className="appt-info">
+                    <p>{record.title || "Untitled Record"}</p>
+                    <span>{record.doctorName || "Provider"} · {new Date(record.visitDate || record.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  </div>
+                  <span className="appt-badge badge-confirmed">{record.type}</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>

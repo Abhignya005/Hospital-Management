@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Navbar from "../Components/Navbar";
 
 // ── Global Styles ──────────────────────────────────────────────────────────
@@ -636,7 +636,6 @@ function Home() {
   injectStyles();
   useReveal();
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const year = new Date().getFullYear();
 
   // derive initials & greeting from user object

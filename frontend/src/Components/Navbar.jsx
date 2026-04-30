@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_CSS = `
   .nav-root {
@@ -163,6 +164,7 @@ export default function Navbar() {
   const dropRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout: contextLogout } = useAuth();
 
   // re-read user on route change (handles login redirect back)
   useEffect(() => { setUser(getUser()); }, [location.pathname]);
@@ -183,10 +185,12 @@ export default function Navbar() {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    setUser(null); setOpen(false); setMobileOpen(false);
-    navigate("/");
+    contextLogout();
+    setUser(null);
+    setOpen(false);
+    setMobileOpen(false);
+    // Small delay to ensure auth context updates before navigation
+    setTimeout(() => navigate("/login", { replace: true }), 100);
   };
 
   const initials = user?.name
@@ -199,6 +203,7 @@ export default function Navbar() {
     { to: "/dashboard",         label: "Dashboard",    icon: "🏠" },
     { to: "/appointments",      label: "Appointments", icon: "📅" },
     { to: "/records",           label: "Records",      icon: "🗂️" },
+    { to: "/prescriptions",     label: "Prescriptions", icon: "💊" },
   ];
   const doctorLinks = [
     { to: "/doctor/dashboard",  label: "Dashboard",    icon: "🏠" },
@@ -247,6 +252,7 @@ export default function Navbar() {
                   <Link to="/profile"      className="nav-dd-item" onClick={() => setOpen(false)}>👤 My Profile</Link>
                   <Link to="/appointments" className="nav-dd-item" onClick={() => setOpen(false)}>📅 Appointments</Link>
                   <Link to="/records"      className="nav-dd-item" onClick={() => setOpen(false)}>🗂️ Health Records</Link>
+                  <Link to="/prescriptions" className="nav-dd-item" onClick={() => setOpen(false)}>💊 Prescriptions</Link>
                   <div className="nav-dd-divider" />
                   <button className="nav-dd-item danger" onClick={logout}>🚪 Logout</button>
                 </div>
@@ -278,6 +284,7 @@ export default function Navbar() {
               <Link key={l.to} to={l.to} onClick={() => setMobileOpen(false)}>{l.icon} {l.label}</Link>
             ))}
             <Link to="/profile" onClick={() => setMobileOpen(false)}>👤 My Profile</Link>
+            <Link to="/prescriptions" onClick={() => setMobileOpen(false)}>💊 Prescriptions</Link>
             <button className="mob-logout" onClick={logout}>🚪 Logout</button>
           </>
         ) : (

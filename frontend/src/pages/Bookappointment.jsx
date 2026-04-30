@@ -104,7 +104,7 @@ const SLOTS = ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 
 export default function BookAppointment() {
   injectCSS("book-css", CSS);
   const navigate = useNavigate();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { } = useAuth();
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
