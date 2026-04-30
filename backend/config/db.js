@@ -15,21 +15,32 @@ let mongoServer;
 const connectDB = async () => {
   const mongoUri = process.env.MONGO_URI;
 
-  if (!mongoUri) {
-    throw new Error('MONGO_URI is not set in backend/.env');
-  }
-
   try {
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
-      tls: true,                          // ✅ Add this
-      tlsAllowInvalidCertificates: true,  // ✅ Add this
-    });
+    // If a configured Mongo URI exists, try connecting to it first.
+    if (mongoUri) {
+      await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+        tls: true,
+        tlsAllowInvalidCertificates: true,
+      });
 
-    console.log('MongoDB connected successfully');
+      console.log('MongoDB connected successfully');
+      return mongoose.connection;
+    }
+
+    // No MONGO_URI provided — fall back to in-memory DB for local development.
+    console.warn('MONGO_URI is not set in backend/.env — falling back to in-memory MongoDB.');
+
+    mongoServer = await MongoMemoryServer.create();
+    const memoryUri = mongoServer.getUri();
+
+    await mongoose.connect(memoryUri);
+
+    console.log('MongoDB (in-memory) connected successfully');
     return mongoose.connection;
 
   } catch (error) {
+    // If a configured connection attempt failed, fall back to in-memory DB.
     console.warn(`Configured MongoDB connection failed: ${error.message}`);
     console.warn('Falling back to in-memory MongoDB so the app can keep running.');
 
